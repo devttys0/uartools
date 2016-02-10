@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import re
 import sys
 
 chars_per_group = 2
@@ -50,37 +49,30 @@ except Exception:
 
 line_count = 0
 byte_count = 0
-bytes_per_line = (chars_per_group * groups_per_line) / 2
-
-# Matches and extracts groups of ASCII hex groups fitting the supplied description
-regex = re.compile('(([A-Fa-f0-9]{%d}\s*){%d})' % (chars_per_group, groups_per_line))
-sys.stderr.write("Searching %s for ASCII hex matching the pattern: '%s'...\n" % (fp.name, regex.pattern))
+sys.stderr.write("Searching %s for ASCII hex characters...\n" % (fp.name))
 
 for line in fp.readlines():
+    hexvals = []
+    line_count += 1
+
     line = line.strip()
+    words = line.split()
+    words.reverse()
 
-    match = regex.search(line)
-    if match:
-        line = match.groups()[0].strip().replace(' ', '').replace('\t', '')
-
-        index = 0
-        bin_bytes = []
-
-        while True:
+    for word in words:
+        if len(word) == chars_per_group:
             try:
-                bin_bytes.append(chr(int(line[index:index+2], 16)))
-                index += 2
-            except KeyboardInterrupt as e:
-                raise e
+                val = int(word, 16)
+                hexvals.append(chr(val))
+                if len(hexvals) == groups_per_line:
+                    break
             except Exception:
-                break
+                continue
 
-        sys.stdout.write(''.join(bin_bytes))
-        line_count += 1
-        byte_count += bytes_per_line
-
-if fp != sys.stdin:
-    fp.close()
+    if len(hexvals) == groups_per_line:
+        hexvals.reverse()
+        sys.stdout.write("".join(hexvals))
+        byte_count += len(hexvals)
 
 sys.stderr.write("Found %d lines of text containing ASCII hex codes; created %d binary bytes.\n" % (line_count, byte_count))
-
+fp.close()
