@@ -53,6 +53,7 @@ sys.stderr.write("Searching %s for ASCII hex characters...\n" % (fp.name))
 
 for line in fp.readlines():
     hexvals = []
+    hexwords = []
     line_count += 1
 
     line = line.strip()
@@ -61,16 +62,25 @@ for line in fp.readlines():
 
     for word in words:
         if len(word) == chars_per_group:
+            hexwords.append(word)
+
+    if len(hexwords) >= groups_per_line:
+        hexwords = hexwords[:groups_per_line]
+        hexwords.reverse()
+
+        hexline = ''.join(hexwords)
+        hexbytes = [hexline[i:i+2] for i in range(0, len(hexline), 2)]
+
+        for byte in hexbytes:
             try:
-                val = int(word, 16)
+                val = int(byte, 16)
                 hexvals.append(chr(val))
-                if len(hexvals) == groups_per_line:
+                if len(hexvals) == (groups_per_line * chars_per_group):
                     break
-            except Exception:
+            except Exception as e:
                 continue
 
-    if len(hexvals) == groups_per_line:
-        hexvals.reverse()
+    if hexvals:
         sys.stdout.write("".join(hexvals))
         byte_count += len(hexvals)
 
