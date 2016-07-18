@@ -54,20 +54,30 @@ sys.stderr.write("Searching %s for ASCII hex characters...\n" % (fp.name))
 for line in fp.readlines():
     hexvals = []
     hexwords = []
-    line_count += 1
+    word_count = 0
+    word_start = 0
 
     line = line.strip()
     words = line.split()
-    words.reverse()
 
-    for word in words:
-        if len(word) == chars_per_group:
-            hexwords.append(word)
+    for index in range(0, len(words)):
+        if len(words[index]) == chars_per_group:
+            # Make sure it's a valid hex value
+            try:
+                val = int(words[index], 16)
+            except:
+                continue
 
-    if len(hexwords) >= groups_per_line:
-        hexwords = hexwords[:groups_per_line]
-        hexwords.reverse()
+            if word_count == 0:
+                word_start = index
 
+            word_count += 1
+
+            if word_count == groups_per_line:
+                hexwords = words[word_start:word_start+groups_per_line]
+                break
+
+    if len(hexwords) == groups_per_line:
         hexline = ''.join(hexwords)
         hexbytes = [hexline[i:i+2] for i in range(0, len(hexline), 2)]
 
@@ -81,8 +91,11 @@ for line in fp.readlines():
                 continue
 
     if hexvals:
+        if len(hexvals) != 16:
+            print "%d hexvals on line '%s': %s" % (len(hexvals), line, str(words))
         sys.stdout.write("".join(hexvals))
         byte_count += len(hexvals)
+        line_count += 1
 
 sys.stderr.write("Found %d lines of text containing ASCII hex codes; created %d binary bytes.\n" % (line_count, byte_count))
 fp.close()
